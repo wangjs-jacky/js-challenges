@@ -1,0 +1,29 @@
+{
+  "private": true,
+  "author": "所无聊 <2409277719@qq.com>",
+  "scripts": {
+    "dev": "max dev",
+    "build": "max build",
+    "format": "prettier --cache --write .",
+    "prepare": "husky install",
+    "postinstall": "max setup",
+    "setup": "max setup",
+    "start": "npm run dev"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.2.6",
+    "@ant-design/pro-components": "^2.6.31",
+    "@umijs/max": "^4.0.87",
+    "antd": "^5.10.2"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.31",
+    "@types/react-dom": "^18.2.14",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.0.2",
+    "prettier": "^3.0.3",
+    "prettier-plugin-organize-imports": "^3.2.3",
+    "prettier-plugin-packagejson": "^2.4.6",
+    "typescript": "^5.2.2"
+  }
+}
