@@ -1,5 +1,86 @@
 # API 流式请求
 
+## 基础知识
+
+如何构造一个可迭代对象？一共有两种方法：
+
+1. 需要构造一个特殊的函数（`Symbol.iterator`），返回一个具有 `next` 属性节点的对象，其中 `next` 的返回结果必须为 `{done: boolean, value: any}`
+2. 使用 `generator` 快速构建。
+
+**Example**
+
+```tsx
+let range = {
+  from: 1,
+  to: 3
+};
+```
+
+第一种方案：
+
+```tsx
+let range = {
+  from: 1,
+  to: 3,
+  [Symbol.iterator]() {
+    let current = this.from;
+    let last = this.to;
+    
+    return {
+      next() {
+        if (current <= last) {
+          return { done: false, value: current++ };
+        } else {
+          return { done: true, value: undefined };
+        }
+      }
+    };
+  }
+};
+```
+
+第二种方案：直接使用 `generator` 函数
+
+```tsx
+// 或者更简单的方式，直接使用 generator 函数
+function* generateSequence(from, to) {
+  yield 1;
+  yield 2;
+  yield 3;
+}
+```
+
+那我们又如何消费这个可迭代对象呢？ 一共也有两种方案
+
+第一种方案，使用 `xxx.next()` 一直消费返回值，直至 `done` 为 `true`
+
+```tsx
+// 如果是第一种方案的话，
+let gen = range[Symbol.iterator]();
+// 如果是第二种方案，直接执行就好了
+let gen = generateSequence();
+let one = gen.next(); // {value: 1, done: false}
+let two = gen.next(); // {value: 2, done: false}
+let three = gen.next(); // {value: 3, done: true}
+```
+
+第二种方案，则可使用  `for...of` 这种消费方式
+
+```tsx
+for(let value of generateSequence()){
+  console.log(value)
+}
+```
+
+铺垫完 `iterator` 的基础概念后，我们看下实际的案例就很方便了，对于 `repsones.body` 是一个 `stream` 类型。消费就两个步骤:
+1. 获取可迭代对象
+  - 对于 `fetch` 方式：`const reader = response.body.getReader()`
+  - 对于 `node-fetch@2.x` 方式： `const reader = response.body[Symbol.asyncIterator]` 
+
+2. 通过 `.next` 消费
+  - 对于 `fetch` 方式：`reader.read()`
+  - 对于 `node-fetch@2.x` 方式： `reader.next()` 
+
 ## 使用原生 fetch 进行流式请求
 
 ```ts
@@ -109,7 +190,6 @@ fetchStream();
 ```
 
 
-
 ## 封装 compatible fetch 方法
 
 原生：浏览器环境 + node 18.0.0 或更高版本
@@ -209,15 +289,3 @@ async function fetchStream() {
 
 fetchStream();
 ```
-
-
-
-## 使用迭代器改造
-
-
-
-
-
-## Symbol.asyncIterator 是个什么？
-
-对于一个普通对象的是，是无法使用
