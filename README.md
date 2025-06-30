@@ -4,6 +4,9 @@
 
 ## Promise 周边场景题（hot）
 
+- [使用 setTimeout 实现 setInterval，并扩展实现 cancel 方法](https://github.com/wangjs-jacky/js-challenges/issues/5)
+  `单一任务的 Loop 模式`
+
 - [交通灯](https://github.com/wangjs-jacky/js-challenges/issues/1)
   `同步任务 Loop 模式` `异步任务 Loop 模式`
 
@@ -15,6 +18,3 @@
 
 - [js 每隔一秒打印 1,2,3,4,5](https://github.com/wangjs-jacky/js-challenges/issues/4)
   `异步任务串行模式`
-
-- [使用 setTimeout 实现 setInterval，并扩展实现 cancel 方法](https://github.com/wangjs-jacky/js-challenges/issues/5)
-  `异步任务 Loop 模式`
