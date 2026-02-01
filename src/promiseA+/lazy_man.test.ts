@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { LazyMan } from './lazy_man.solution';
+import { LazyMan } from './lazy_man';
 
 /**
  * LazyMan 测试用例
@@ -183,23 +183,15 @@ describe('LazyMan', () => {
     // 初始执行，sleepFirst(1) 应该先执行
     await vi.advanceTimersByTimeAsync(0);
     
-    // 等待1秒后，开始执行其他任务
+    // 等待1秒后，开始执行其他任务（sleepFirst 结束，执行 Hi + eat lunch，进入 sleep(2)）
     await vi.advanceTimersByTimeAsync(1000);
     expect(callOrder).toEqual([
       "Hi, I'm Tony",
       'Eat lunch'
     ]);
     
-    // 等待2秒后，执行 dinner
+    // 等待2秒后，sleep(2) 结束，dinner 与 junk food 在同一 tick 内顺序执行
     await vi.advanceTimersByTimeAsync(2000);
-    expect(callOrder).toEqual([
-      "Hi, I'm Tony",
-      'Eat lunch',
-      'Eat dinner'
-    ]);
-    
-    // 最后执行 junk food
-    await vi.advanceTimersByTimeAsync(0);
     expect(callOrder).toEqual([
       "Hi, I'm Tony",
       'Eat lunch',

@@ -1,6 +1,6 @@
 /**
- * 实现一个 LazyMan
- * 
+ * 实现一个 LazyMan（算法面试题）
+ *
  * 要求：
  * - 支持链式调用
  * - 支持 sleep（延迟执行）
@@ -9,109 +9,94 @@
  * - 任务按顺序执行
  * - 构造函数调用时输出问候语：console.log("Hi, I'm {name}")
  * - eat 方法输出：console.log("Eat {food}")
+ *
+ * 示例：
+ *   LazyMan('Tony').eat('lunch').eat('dinner').sleep(3).eat('junk food');
+ *   LazyMan('Tony').eat('lunch').sleepFirst(2).eat('dinner');
  */
 
 /**
- * 任务类型
+ * 任务类型（可按需使用或自行定义）
  */
 type Task = {
-  type: 'eat' | 'sleep' | 'sleepFirst';
-  value: string | number;
+  type: 'eat' | 'async' | 'sleepFirst' | "sync";
   content?: string;
   time?: number;
 };
 
 /**
  * LazyMan 类
- * 支持链式调用，可以控制任务的执行顺序和时机
+ * 支持链式调用，控制任务执行顺序与时机
  */
 class LazyManClass {
   private name: string;
   private tasks: Task[];
+  hasTrigger: boolean;
 
-  /**
-   * 创建 LazyMan 实例
-   * @param name LazyMan 的名字
-   */
   constructor(name: string) {
-    // TODO: 实现构造函数
     this.name = name;
-    this.tasks = [];
-    // this.tasks.push()
+    this.tasks = [{
+      type: "sync",
+      content: "Hi, I'm " + this.name
+    }];
+    this.hasTrigger = false;
+    setTimeout(() => {
+      this.start();
+    }, 0)
   }
 
-  /**
-   * 立即执行：吃食物
-   * @param food 食物名称
-   * @returns this，支持链式调用
-   */
+  /** 立即执行：吃食物，输出 Eat {food} */
   eat(food: string): this {
-    // TODO: 实现 eat 方法
     this.tasks.push({
-      type: "eat",
-      value: food,
+      type: "sync",
       content: "Eat " + food
     })
-    setTimeout(() => {
-      // this.start();
-    }, 0)
+    setTimeout(() => this.start(), 0)
     return this;
   }
 
-  asyncstart() {
-    console.log("Hi, I'm " + this.name);
-    for (let i = 0; i < this.tasks.length - 1; i++) {
-      const { value, type, content, time } = this.tasks[i];
-      if (time) {
-        await new Promise((resolve) => {
-          setTimeout(() => {
-            console.log(content);
-            resolve(undefined);
-          }, time)
-        })
-      } else {
+  /** 延迟执行：先等待 seconds 秒，再继续后续任务 */
+  sleep(seconds: number): this {
+    this.tasks.push({
+      type: "async",
+      time: seconds * 1000  // 统一存毫秒，start() 里直接用
+    })
+    return this;
+  }
+
+  /** 优先延迟执行：先等待 seconds 秒，再执行当前已排队的任务 */
+  sleepFirst(seconds: number): this {
+    this.tasks.unshift({
+      type: "async",
+      time: seconds * 1000
+    })
+    return this;
+  }
+
+  async start() {
+    if (this.hasTrigger) return;
+    this.hasTrigger = true;
+    for (let i = 0; i < this.tasks.length; i++) {
+      const task = this.tasks[i];
+      const { content, type, time } = task;
+      if (type === "sync") {
         console.log(content);
+      } else if (type == "async") {
+        await new Promise((resolve, reject) => {
+          setTimeout(() => { resolve(undefined) }, time)
+        })
       }
     }
   }
 }
 
 /**
- * 延迟执行：睡眠指定秒数
- * @param seconds 睡眠秒数
- * @returns this，支持链式调用
- */
-sleep(seconds: number): this {
-  console.log("wjs: xxx", this.tasks);
-
-  // 对最后一个任务拓展一个 time
-  this.tasks[this.tasks.length - 1].time = seconds;
-  console.log("wjs: this.tasks", this.tasks);
-  return this;
-}
-
-/**
- * 优先延迟执行：优先睡眠指定秒数
- * @param seconds 睡眠秒数
- * @returns this，支持链式调用
- */
-sleepFirst(seconds: number): this {
-  // TODO: 实现 sleepFirst 方法
-  throw new Error('Not implemented');
-}
-}
-
-/**
- * LazyMan 函数
- * 支持 LazyMan('Tony') 的调用方式
- * @param name LazyMan 的名字
- * @returns LazyMan 实例，支持链式调用
+ * LazyMan 工厂函数
+ * 用法：LazyMan('Tony').eat('lunch').sleep(2).eat('dinner')
  */
 export function LazyMan(name: string): LazyManClass {
-  // TODO: 实现函数
-  // throw new Error('Not implemented');
+  // TODO: 可选：在合适时机启动任务队列
   return new LazyManClass(name);
 }
 
-// 导出类供类型使用
 export { LazyManClass };
