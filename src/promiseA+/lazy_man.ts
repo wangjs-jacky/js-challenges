@@ -19,7 +19,7 @@
  * 任务类型（可按需使用或自行定义）
  */
 type Task = {
-  type: 'eat' | 'async' | 'sleepFirst' | "sync";
+  type: 'async'| "sync";
   content?: string;
   time?: number;
 };
