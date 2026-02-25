@@ -81,6 +81,8 @@ for(let value of generateSequence()){
   - 对于 `fetch` 方式：`reader.read()`
   - 对于 `node-fetch@2.x` 方式： `reader.next()` 
 
+
+
 ## 使用原生 fetch 进行流式请求
 
 ```ts
@@ -162,7 +164,7 @@ async function fetchStream() {
   const response = await fetch("https://api.coze.cn/v3/chat", {
     method: 'POST',
     headers: {
-      Authorization: "Bearer pat_WLa5EgjU4ph6O54jpS6dnzD1j",
+      Authorization: "Bearer pat_7W7lkbbJTaJV2yQqAvOVLvMPKXDP4SXTEs6WAq8TZMeJi6xxOrtfkq7tdcYfu880",
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload)
@@ -188,6 +190,7 @@ async function fetchStream() {
 
 fetchStream();
 ```
+
 
 
 ## 封装 compatible fetch 方法
@@ -288,4 +291,83 @@ async function fetchStream() {
 }
 
 fetchStream();
+```
+
+
+## 如何基于流式思想统一封装为 stream 流式数据
+
+上面的代码中，我们只是直接打印出来了 `chunk` 信息，但是并没有办法直接使用，因为数据是一批一批来的，所以外部没有办法直接消费。
+
+```tsx
+while (true) {
+    const { done, value } = await (reader.next ? reader.next() : reader.read());
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    console.log('Received chunk:', chunk);
+}
+```
+
+可以将响应结果，也返回成 steam 类型对象
+
+```tsx
+return {
+  // 对应的函数这里加一个 * 即可
+  *stream(){
+    ....
+    while (true) {
+        const { done, value } = await (reader.next ? reader.next() : reader.read());
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        // 使用 yield 充当原先的 return 即可
+        yield chunk
+
+    }
+  }
+}
+
+```
+
+额外需要关注下 `chunk` 的类型，由于已经使用 `TextDecoder` 解构，因此已经是 `string` 类型了，可进一步转化为 `object` 对象，可进一步方便外部消费。
+
+但每次返回的 `chunk` 有可能不是一个完整的 `JSON.stringify` 处理后的对象，必须拿到完整的信息后再转化
+
+```tsx
+return {
+  // 对应的函数这里加一个 * 即可
+  *stream(){
+    ....
+
+    let buffer = "";
+    let chunkObj: Record<string, string> = {};
+    while (true) {
+        const { done, value } = await (reader.next ? reader.next() : reader.read());
+        if (done) break;
+        // 获取完整的信息
+        buffer = buffer + decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        
+        // 处理除最后一行外的所有行（因为最后一行可能不完整）
+        for (let i = 0; i < lines.length - 1; i++) {
+          const line = lines[i];
+          // 假设相应的一组的数据格式为：
+          // {eventName: xxxx}
+          // {data: yyyy}
+          const index = line.indexOf(':');
+          if(index !==-1){
+            const key = line.substring(0, index).trim();
+            const value = line.substring(index + 1).trim();
+            chunkObj[key] = value;
+            // 当识别到 data 时，则一组信息完成，直接 yield 出去
+            if(key == 'data'){
+              yield chunkObj;
+              // 重置 chunkObj，准备处理下一组数据
+              chunkObj = {};
+            }
+          } 
+        }
+        // 保留最后一行的数据，因为有可能不完整
+        buffer = lines[lines.length - 1];
+    }
+  }
+}
 ```
